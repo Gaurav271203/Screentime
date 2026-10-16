@@ -108,6 +108,9 @@ object Apps {
         excludedCache?.let { return it }
         val s = HashSet<String>()
         s.add("com.android.systemui")
+        s.add("com.google.android.apps.wellbeing")
+        s.add("com.samsung.android.forest")
+        s.add("com.samsung.android.app.wellbeing")
         s.add(ctx.packageName)
         try {
             val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
@@ -223,7 +226,7 @@ class UsageData {
 object UsageRepository {
 
     /** Bump to throw away saved history computed by an older algorithm. */
-    private const val HIST_VERSION = 2
+    private const val HIST_VERSION = 3
 
     /** Wipes everything saved on this phone (history + notification log). Goal is kept. */
     fun clearSaved(ctx: Context) {
@@ -282,18 +285,19 @@ object UsageRepository {
         val events = usm.queryEvents(start, end)
         val e = UsageEvents.Event()
 
-        // Per package: how many activities are in the foreground, and since when.
-        // Time counts while at least one is resumed (so overlapping activities never double count).
-        val depth = HashMap<String, Int>()
-        val since = HashMap<String, Long>()
+        // Only one app can be in the foreground at a time. A new RESUMED always ends the previous
+        // app's session, so a missing PAUSED event can never inflate the total.
+        var cur: String? = null
+        var curStart = 0L
         val seen = HashSet<String>()
+        val maxSession = 4L * 60L * 60L * 1000L
 
-        fun closeAll(ts: Long) {
-            for ((pkg, st) in since) {
-                if (ts > st && pkg !in excluded) data.add(z, pkg, st, ts)
+        fun closeCur(ts: Long) {
+            val c = cur
+            if (c != null && ts > curStart && c !in excluded) {
+                data.add(z, c, curStart, minOf(ts, curStart + maxSession))
             }
-            since.clear()
-            depth.clear()
+            cur = null
         }
 
         while (events.hasNextEvent()) {
@@ -303,34 +307,31 @@ object UsageRepository {
                 UsageEvents.Event.ACTIVITY_RESUMED -> {
                     val pkg = e.packageName ?: continue
                     seen.add(pkg)
-                    val n = depth[pkg] ?: 0
-                    if (n == 0) since[pkg] = ts
-                    depth[pkg] = n + 1
+                    if (cur != pkg) {
+                        closeCur(ts)
+                        cur = pkg
+                        curStart = ts
+                    }
                 }
                 UsageEvents.Event.ACTIVITY_PAUSED -> {
                     val pkg = e.packageName ?: continue
-                    val n = depth[pkg] ?: 0
-                    if (n <= 0) {
+                    if (cur == pkg) {
+                        closeCur(ts)
+                    } else if (cur == null && pkg !in seen && pkg !in excluded && ts > start) {
                         // Session began before the window we queried: count from the window start.
-                        if (pkg !in seen && pkg !in excluded && ts > start) data.add(z, pkg, start, ts)
-                        seen.add(pkg)
-                    } else if (n == 1) {
-                        val st = since.remove(pkg)
-                        depth.remove(pkg)
-                        if (st != null && ts > st && pkg !in excluded) data.add(z, pkg, st, ts)
-                    } else {
-                        depth[pkg] = n - 1
+                        data.add(z, pkg, start, minOf(ts, start + maxSession))
                     }
+                    seen.add(pkg)
                 }
                 // Screen turned off / locked / device shut down: nothing is in use any more.
                 UsageEvents.Event.SCREEN_NON_INTERACTIVE,
                 UsageEvents.Event.KEYGUARD_SHOWN,
-                UsageEvents.Event.DEVICE_SHUTDOWN -> closeAll(ts)
+                UsageEvents.Event.DEVICE_SHUTDOWN -> closeCur(ts)
                 UsageEvents.Event.KEYGUARD_HIDDEN -> data.addUnlock(z, ts)
             }
         }
         // Whatever is still in the foreground right now.
-        closeAll(end)
+        closeCur(end)
 
         // Save completed days so they survive Android's event retention limit.
         val ed = sp.edit()
