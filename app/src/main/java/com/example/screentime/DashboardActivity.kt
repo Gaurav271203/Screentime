@@ -103,10 +103,10 @@ class DashboardActivity : Activity() {
             val z = ZoneId.systemDefault()
             val s = start.atStartOfDay(z).toInstant().toEpochMilli()
             val e = start.plusDays(7).atStartOfDay(z).toInstant().toEpochMilli()
-            val notifs = try {
+            val notifs: Map<LocalDate, Map<String, Int>> = try {
                 NotifDb.get(ctx).countsByDay(s, e)
             } catch (ex: Exception) {
-                emptyMap()
+                emptyMap<LocalDate, Map<String, Int>>()
             }
             for (p in usage.packages()) Apps.get(ctx, p)
             Week(start, usage, notifs)
