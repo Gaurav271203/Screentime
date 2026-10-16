@@ -19,7 +19,7 @@ class HeatmapView @JvmOverloads constructor(
 
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val dash = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-    private val text = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Fonts.regular(context) }
     private val path = Path()
     private val rect = RectF()
     private val days = arrayOf("M", "T", "W", "T", "F", "S", "S")

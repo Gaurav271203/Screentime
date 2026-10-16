@@ -23,7 +23,7 @@ class RingView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
     }
-    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; typeface = Fonts.regular(context) }
     private val rect = RectF()
 
     /** [used] is the fraction of the goal that has been used (can exceed 1). */
@@ -81,7 +81,7 @@ class DayRingView @JvmOverloads constructor(
         strokeCap = Paint.Cap.ROUND
     }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; typeface = Fonts.regular(context) }
     private val rect = RectF()
 
     fun setData(number: String, frac: Float, today: Boolean) {

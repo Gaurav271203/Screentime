@@ -222,6 +222,20 @@ class UsageData {
 
 object UsageRepository {
 
+    /** Bump to throw away saved history computed by an older algorithm. */
+    private const val HIST_VERSION = 2
+
+    /** Wipes everything saved on this phone (history + notification log). Goal is kept. */
+    fun clearSaved(ctx: Context) {
+        ctx.getSharedPreferences("hist", Context.MODE_PRIVATE).edit().clear()
+            .putInt("v", HIST_VERSION).apply()
+        try {
+            NotifDb.get(ctx).clearAll()
+        } catch (_: Exception) {
+        }
+    }
+
+
     fun hasAccess(ctx: Context): Boolean {
         val ops = ctx.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
         return ops.unsafeCheckOpNoThrow(
@@ -238,6 +252,9 @@ object UsageRepository {
         val data = UsageData()
         val today = LocalDate.now()
         val sp = ctx.getSharedPreferences("hist", Context.MODE_PRIVATE)
+        if (sp.getInt("v", 0) != HIST_VERSION) {
+            sp.edit().clear().putInt("v", HIST_VERSION).apply()
+        }
 
         val skip = HashSet<Long>()
         var firstMissing: LocalDate? = null
@@ -264,27 +281,56 @@ object UsageRepository {
         val excluded = Apps.excluded(ctx)
         val events = usm.queryEvents(start, end)
         val e = UsageEvents.Event()
-        val open = HashMap<String, Long>()
+
+        // Per package: how many activities are in the foreground, and since when.
+        // Time counts while at least one is resumed (so overlapping activities never double count).
+        val depth = HashMap<String, Int>()
+        val since = HashMap<String, Long>()
+        val seen = HashSet<String>()
+
+        fun closeAll(ts: Long) {
+            for ((pkg, st) in since) {
+                if (ts > st && pkg !in excluded) data.add(z, pkg, st, ts)
+            }
+            since.clear()
+            depth.clear()
+        }
 
         while (events.hasNextEvent()) {
             events.getNextEvent(e)
-            val pkg = e.packageName ?: continue
+            val ts = e.timeStamp
             when (e.eventType) {
-                UsageEvents.Event.ACTIVITY_RESUMED ->
-                    open[pkg + "/" + (e.className ?: "")] = e.timeStamp
+                UsageEvents.Event.ACTIVITY_RESUMED -> {
+                    val pkg = e.packageName ?: continue
+                    seen.add(pkg)
+                    val n = depth[pkg] ?: 0
+                    if (n == 0) since[pkg] = ts
+                    depth[pkg] = n + 1
+                }
                 UsageEvents.Event.ACTIVITY_PAUSED -> {
-                    val s = open.remove(pkg + "/" + (e.className ?: ""))
-                    if (s != null && e.timeStamp > s && pkg !in excluded) {
-                        data.add(z, pkg, s, e.timeStamp)
+                    val pkg = e.packageName ?: continue
+                    val n = depth[pkg] ?: 0
+                    if (n <= 0) {
+                        // Session began before the window we queried: count from the window start.
+                        if (pkg !in seen && pkg !in excluded && ts > start) data.add(z, pkg, start, ts)
+                        seen.add(pkg)
+                    } else if (n == 1) {
+                        val st = since.remove(pkg)
+                        depth.remove(pkg)
+                        if (st != null && ts > st && pkg !in excluded) data.add(z, pkg, st, ts)
+                    } else {
+                        depth[pkg] = n - 1
                     }
                 }
-                UsageEvents.Event.KEYGUARD_HIDDEN -> data.addUnlock(z, e.timeStamp)
+                // Screen turned off / locked / device shut down: nothing is in use any more.
+                UsageEvents.Event.SCREEN_NON_INTERACTIVE,
+                UsageEvents.Event.KEYGUARD_SHOWN,
+                UsageEvents.Event.DEVICE_SHUTDOWN -> closeAll(ts)
+                UsageEvents.Event.KEYGUARD_HIDDEN -> data.addUnlock(z, ts)
             }
         }
-        for ((k, s) in open) {
-            val pkg = k.substringBefore('/')
-            if (end > s && pkg !in excluded) data.add(z, pkg, s, end)
-        }
+        // Whatever is still in the foreground right now.
+        closeAll(end)
 
         // Save completed days so they survive Android's event retention limit.
         val ed = sp.edit()
@@ -327,6 +373,19 @@ object Prefs {
         val e = sp(ctx).edit()
         if (sp(ctx).getInt("goal", -1) <= 0) e.putLong("goalSince", LocalDate.now().toEpochDay())
         e.putInt("goal", minutes).apply()
+    }
+
+    fun blockEnabled(ctx: Context): Boolean = sp(ctx).getBoolean("block", false)
+
+    fun setBlockEnabled(ctx: Context, on: Boolean) {
+        sp(ctx).edit().putBoolean("block", on).apply()
+    }
+
+    /** Packages the user chose to keep usable after the limit. null = never edited (use defaults). */
+    fun allowedApps(ctx: Context): Set<String>? = sp(ctx).getStringSet("allowed", null)?.toSet()
+
+    fun setAllowedApps(ctx: Context, s: Set<String>) {
+        sp(ctx).edit().putStringSet("allowed", HashSet(s)).apply()
     }
 
     fun clearGoal(ctx: Context) {

@@ -6,6 +6,12 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
@@ -37,6 +43,25 @@
         <activity android:name=".WeeklyActivity" android:exported="false" />
         <activity android:name=".GoalActivity" android:exported="false" />
         <activity android:name=".AllAppsActivity" android:exported="false" />
+        <activity android:name=".BlockActivity" android:exported="false" />
+        <activity android:name=".AllowedAppsActivity" android:exported="false" />
+
+        <service
+            android:name=".BlockService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Blocks apps after the user's own daily screen time limit is reached" />
+        </service>
+
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <service
             android:name=".NotifLogService"

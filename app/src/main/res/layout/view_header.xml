@@ -19,10 +19,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:fontFamily="sans-serif-medium"
+        android:fontFamily="@font/appfont"
+        android:textFontWeight="500"
         android:paddingStart="8dp"
         android:textColor="@color/text_primary"
-        android:textSize="26sp" />
+        android:textSize="22sp" />
 
     <ImageButton
         android:id="@+id/hdrMenu"

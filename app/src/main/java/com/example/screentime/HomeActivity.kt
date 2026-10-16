@@ -1,6 +1,7 @@
 package com.example.screentime
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
@@ -9,6 +10,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
 import java.time.LocalDate
 
 class HomeActivity : Activity() {
@@ -23,6 +25,7 @@ class HomeActivity : Activity() {
     private lateinit var tvRemain: TextView
     private lateinit var tvRemainLabel: TextView
     private lateinit var ring: RingView
+    private lateinit var tvBlockState: TextView
 
     class HomeData(
         val total: Long,
@@ -44,6 +47,7 @@ class HomeActivity : Activity() {
         tvRemain = findViewById(R.id.tvRemain)
         tvRemainLabel = findViewById(R.id.tvRemainLabel)
         ring = findViewById(R.id.ring)
+        tvBlockState = findViewById(R.id.tvBlockState)
 
         findViewById<View>(R.id.btnGrant).setOnClickListener {
             startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
@@ -55,12 +59,16 @@ class HomeActivity : Activity() {
             val pm = PopupMenu(this, v)
             pm.menu.add(0, 1, 0, "Weekly report")
             pm.menu.add(0, 2, 1, "Screen time goal")
-            pm.menu.add(0, 3, 2, "Notification access")
+            pm.menu.add(0, 3, 2, "Block apps at limit")
+            pm.menu.add(0, 4, 3, "Notification access")
+            pm.menu.add(0, 5, 4, "Clear saved data")
             pm.setOnMenuItemClickListener {
                 when (it.itemId) {
                     1 -> startActivity(Intent(this, WeeklyActivity::class.java))
                     2 -> startActivity(Intent(this, GoalActivity::class.java))
-                    3 -> startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    3 -> startActivity(Intent(this, BlockActivity::class.java))
+                    4 -> startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    5 -> confirmClear()
                 }
                 true
             }
@@ -72,13 +80,40 @@ class HomeActivity : Activity() {
         findViewById<View>(R.id.cardMost).setOnClickListener {
             startActivity(Intent(this, DashboardActivity::class.java))
         }
+        findViewById<View>(R.id.cardBlock).setOnClickListener {
+            startActivity(Intent(this, BlockActivity::class.java))
+        }
+        findViewById<View>(R.id.btnClear).setOnClickListener { confirmClear() }
         findViewById<View>(R.id.cardGoal).setOnClickListener {
             startActivity(Intent(this, GoalActivity::class.java))
         }
     }
 
+    private fun confirmClear() {
+        AlertDialog.Builder(this)
+            .setTitle("Clear saved data?")
+            .setMessage(
+                "This deletes the usage history and notification counts stored by this app. " +
+                    "Today's usage is then recalculated from Android's own records. Your goal and settings are kept."
+            )
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Clear") { _, _ ->
+                val ctx = applicationContext
+                Bg.run(this, {
+                    UsageRepository.clearSaved(ctx)
+                    ScreenTimeWidget.updateAll(ctx)
+                    true
+                }, {
+                    Toast.makeText(this, "Saved data cleared", Toast.LENGTH_SHORT).show()
+                    refresh()
+                })
+            }
+            .show()
+    }
+
     override fun onResume() {
         super.onResume()
+        BlockHelper.sync(this)
         refresh()
         Bg.run(this, { ScreenTimeWidget.updateAll(applicationContext); true }, { })
     }
@@ -102,7 +137,17 @@ class HomeActivity : Activity() {
         }, { bind(it) })
     }
 
+    private fun bindBlockState() {
+        val g = Prefs.goalMinutes(this)
+        tvBlockState.text = when {
+            g <= 0 -> "Set a goal to use"
+            Prefs.blockEnabled(this) -> "On \u00b7 blocks after " + Fmt.spaced(g * 60_000L)
+            else -> "Off"
+        }
+    }
+
     private fun bind(d: HomeData) {
+        bindBlockState()
         tvTotal.text = Fmt.big(d.total)
 
         val colors = Palette.series(this)

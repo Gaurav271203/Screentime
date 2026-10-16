@@ -8,6 +8,8 @@
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:colorAccent">@color/accent</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:fontFamily">@font/appfont</item>
+        <item name="android:textViewStyle">@style/AppTextView</item>
     </style>
 
     <style name="WeekdayHead">
@@ -16,7 +18,7 @@
         <item name="android:layout_weight">1</item>
         <item name="android:gravity">center</item>
         <item name="android:textColor">@color/text_primary</item>
-        <item name="android:textSize">18sp</item>
+        <item name="android:textSize">15sp</item>
     </style>
 
     <style name="DialogButton">
@@ -24,9 +26,14 @@
         <item name="android:layout_height">56dp</item>
         <item name="android:layout_weight">1</item>
         <item name="android:gravity">center</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">@font/appfont</item>
+        <item name="android:textFontWeight">500</item>
         <item name="android:textColor">@color/text_primary</item>
-        <item name="android:textSize">21sp</item>
+        <item name="android:textSize">18sp</item>
         <item name="android:background">?android:attr/selectableItemBackground</item>
+    </style>
+
+    <style name="AppTextView" parent="android:Widget.TextView">
+        <item name="android:fontFamily">@font/appfont</item>
     </style>
 </resources>

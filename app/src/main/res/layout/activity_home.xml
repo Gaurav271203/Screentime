@@ -20,7 +20,7 @@
             android:paddingTop="40dp"
             android:text="Digital Wellbeing"
             android:textColor="@color/text_primary"
-            android:textSize="32sp" />
+            android:textSize="28sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -62,7 +62,7 @@
                 android:layout_height="wrap_content"
                 android:text="Allow usage access"
                 android:textColor="@color/text_primary"
-                android:textSize="19sp" />
+                android:textSize="16sp" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -70,7 +70,7 @@
                 android:layout_marginTop="8dp"
                 android:text="To show your screen time, this app needs usage access. Open the settings, choose this app and turn on \&quot;Permit usage access\&quot;."
                 android:textColor="@color/text_secondary"
-                android:textSize="15sp" />
+                android:textSize="13sp" />
 
             <Button
                 android:id="@+id/btnGrant"
@@ -84,7 +84,7 @@
                 android:text="Open settings"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
-                android:textSize="15sp" />
+                android:textSize="13sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -107,9 +107,10 @@
                     android:id="@+id/tvTotal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-light"
+                    android:fontFamily="@font/appfont"
+        android:textFontWeight="300"
                     android:textColor="@color/text_primary"
-                    android:textSize="38sp" />
+                    android:textSize="33sp" />
 
                 <com.example.screentime.SegmentBarView
                     android:id="@+id/segBar"
@@ -140,7 +141,7 @@
                     android:layout_height="wrap_content"
                     android:text="Most used apps"
                     android:textColor="@color/text_primary"
-                    android:textSize="18sp" />
+                    android:textSize="15sp" />
 
                 <LinearLayout
                     android:id="@+id/iconsRow"
@@ -173,7 +174,7 @@
                         android:layout_height="wrap_content"
                         android:text="Screen time goal"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp" />
+                        android:textSize="15sp" />
 
                     <TextView
                         android:id="@+id/tvGoalPill"
@@ -181,29 +182,31 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
                         android:background="@drawable/bg_pill_dark"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/appfont"
+        android:textFontWeight="500"
                         android:paddingStart="22dp"
                         android:paddingTop="9dp"
                         android:paddingEnd="22dp"
                         android:paddingBottom="9dp"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp" />
+                        android:textSize="15sp" />
 
                     <TextView
                         android:id="@+id/tvRemain"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:fontFamily="sans-serif-light"
+                        android:fontFamily="@font/appfont"
+        android:textFontWeight="300"
                         android:textColor="@color/text_primary"
-                        android:textSize="34sp" />
+                        android:textSize="29sp" />
 
                     <TextView
                         android:id="@+id/tvRemainLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="@color/text_primary"
-                        android:textSize="21sp" />
+                        android:textSize="18sp" />
                 </LinearLayout>
 
                 <com.example.screentime.RingView
@@ -211,6 +214,58 @@
                     android:layout_width="96dp"
                     android:layout_height="96dp" />
             </LinearLayout>
+
+            <!-- App blocking -->
+            <LinearLayout
+                android:id="@+id/cardBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Block apps at limit"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/tvBlockState"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chevron_right" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/btnClear"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:gravity="center"
+                android:paddingTop="14dp"
+                android:paddingBottom="14dp"
+                android:text="Clear saved data"
+                android:textColor="@color/red"
+                android:textSize="14sp" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

@@ -14,6 +14,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.os.Process
+import android.util.SizeF
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
@@ -157,8 +158,8 @@ class ScreenTimeWidget : AppWidgetProvider() {
         }
 
         private fun barBitmap(segs: List<Pair<Float, Int>>): Bitmap {
-            val w = 560
-            val h = 40
+            val w = 600
+            val h = 32
             val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
             val c = Canvas(bmp)
             val path = Path().apply {
@@ -181,60 +182,93 @@ class ScreenTimeWidget : AppWidgetProvider() {
             return bmp
         }
 
-        private fun buildViews(ctx: Context): RemoteViews {
-            val rv = RemoteViews(ctx.packageName, R.layout.widget_screen_time)
+        /** "1h 6m" for the tiny 1x1 version. */
+        private fun tiny(ms: Long): String {
+            val t = ms / 60_000L
+            val h = t / 60
+            val m = t % 60
+            return if (h == 0L) "${m}m" else "${h}h ${m}m"
+        }
 
-            val open = PendingIntent.getActivity(
-                ctx, 0, Intent(ctx, HomeActivity::class.java), PendingIntent.FLAG_IMMUTABLE
-            )
-            rv.setOnClickPendingIntent(R.id.widgetRoot, open)
+        private class WData(
+            val access: Boolean,
+            val total: Long,
+            val top: List<AppUsage>,
+            val segs: List<Pair<Float, Int>>
+        )
 
-            val refresh = PendingIntent.getBroadcast(
-                ctx, 1,
-                Intent(ctx, ScreenTimeWidget::class.java).setAction(ACTION_REFRESH),
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            )
-            rv.setOnClickPendingIntent(R.id.btnRefresh, refresh)
-
-            rv.setTextViewText(
-                R.id.tvStamp,
-                SimpleDateFormat("dd/MM, h:mm a", Locale.getDefault()).format(Date()).lowercase()
-            )
-
-            val rows = intArrayOf(R.id.row1, R.id.row2, R.id.row3)
-            val names = intArrayOf(R.id.name1, R.id.name2, R.id.name3)
-            val times = intArrayOf(R.id.time1, R.id.time2, R.id.time3)
-
-            if (!hasAccess(ctx)) {
-                rv.setTextViewText(R.id.tvTotal, "Tap to allow")
-                rv.setTextViewTextSize(R.id.tvTotal, android.util.TypedValue.COMPLEX_UNIT_SP, 18f)
-                rv.setImageViewBitmap(R.id.imgBar, barBitmap(emptyList()))
-                for (r in rows) rv.setViewVisibility(r, View.GONE)
-                return rv
-            }
-
+        private fun loadData(ctx: Context): WData {
+            if (!hasAccess(ctx)) return WData(false, 0L, emptyList(), emptyList())
             val day = UsageRepository.loadDay(ctx, LocalDate.now())
-            rv.setTextViewTextSize(R.id.tvTotal, android.util.TypedValue.COMPLEX_UNIT_SP, 34f)
-            rv.setTextViewText(R.id.tvTotal, totalText(day.totalMillis))
-
             val colors = intArrayOf(TEAL, BLUE, PURPLE)
             val top = day.apps.take(3)
             val segs = ArrayList<Pair<Float, Int>>()
             top.forEachIndexed { i, a -> segs.add(a.millis.toFloat() to colors[i]) }
             val others = day.totalMillis - top.sumOf { it.millis }
             if (others > 0) segs.add(others.toFloat() to OTHERS)
-            rv.setImageViewBitmap(R.id.imgBar, barBitmap(segs))
+            return WData(true, day.totalMillis, top, segs)
+        }
 
-            for (i in 0 until 3) {
-                if (i < top.size) {
-                    rv.setViewVisibility(rows[i], View.VISIBLE)
-                    rv.setTextViewText(names[i], legend(top[i].label, colors[i]))
-                    rv.setTextViewText(times[i], spaced(top[i].millis))
-                } else {
-                    rv.setViewVisibility(rows[i], View.GONE)
+        private fun buildViews(ctx: Context): RemoteViews {
+            val d = loadData(ctx)
+            val wide = RemoteViews(ctx.packageName, R.layout.widget_wide)
+            val compact = RemoteViews(ctx.packageName, R.layout.widget_compact)
+            val small = RemoteViews(ctx.packageName, R.layout.widget_small)
+
+            val open = PendingIntent.getActivity(
+                ctx, 0, Intent(ctx, HomeActivity::class.java), PendingIntent.FLAG_IMMUTABLE
+            )
+            val refresh = PendingIntent.getBroadcast(
+                ctx, 1,
+                Intent(ctx, ScreenTimeWidget::class.java).setAction(ACTION_REFRESH),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            for (rv in listOf(wide, compact, small)) rv.setOnClickPendingIntent(R.id.widgetRoot, open)
+            wide.setOnClickPendingIntent(R.id.btnRefresh, refresh)
+            compact.setOnClickPendingIntent(R.id.btnRefresh, refresh)
+
+            val bar = barBitmap(d.segs)
+            wide.setImageViewBitmap(R.id.imgBar, bar)
+            compact.setImageViewBitmap(R.id.imgBar, bar)
+            wide.setTextViewText(
+                R.id.tvStamp,
+                SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date()).lowercase()
+            )
+
+            if (!d.access) {
+                wide.setTextViewText(R.id.tvTotal, "Allow access")
+                compact.setTextViewText(R.id.tvTotal, "Allow access")
+                small.setTextViewText(R.id.tvTotal, "Allow")
+                for (r in intArrayOf(R.id.row1, R.id.row2, R.id.row3)) wide.setViewVisibility(r, View.GONE)
+            } else {
+                wide.setTextViewText(R.id.tvTotal, totalText(d.total))
+                compact.setTextViewText(R.id.tvTotal, totalText(d.total))
+                small.setTextViewText(R.id.tvTotal, tiny(d.total))
+
+                val rows = intArrayOf(R.id.row1, R.id.row2, R.id.row3)
+                val names = intArrayOf(R.id.name1, R.id.name2, R.id.name3)
+                val times = intArrayOf(R.id.time1, R.id.time2, R.id.time3)
+                val colors = intArrayOf(TEAL, BLUE, PURPLE)
+                for (i in 0 until 3) {
+                    if (i < d.top.size) {
+                        wide.setViewVisibility(rows[i], View.VISIBLE)
+                        wide.setTextViewText(names[i], legend(d.top[i].label, colors[i]))
+                        wide.setTextViewText(times[i], spaced(d.top[i].millis))
+                    } else {
+                        wide.setViewVisibility(rows[i], View.GONE)
+                    }
                 }
             }
-            return rv
+
+            // Android picks the best fit for the current widget size:
+            // tiny = total only, compact = total + bar, wide (4x1) = everything.
+            return RemoteViews(
+                mapOf(
+                    SizeF(40f, 40f) to small,
+                    SizeF(110f, 64f) to compact,
+                    SizeF(220f, 66f) to wide
+                )
+            )
         }
     }
 }

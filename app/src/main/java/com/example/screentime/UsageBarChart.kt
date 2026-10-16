@@ -38,8 +38,8 @@ class UsageBarChart @JvmOverloads constructor(
     var onSwipe: ((Int) -> Unit)? = null
 
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-    private val gridText = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.RIGHT }
-    private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    private val gridText = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.RIGHT; typeface = Fonts.regular(context) }
+    private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; typeface = Fonts.regular(context) }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val goalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val xPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {

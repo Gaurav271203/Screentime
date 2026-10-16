@@ -20,13 +20,14 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:textColor="@color/text_primary"
-        android:textSize="14sp" />
+        android:textSize="12sp" />
 
     <TextView
         android:id="@+id/time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif-medium"
+        android:fontFamily="@font/appfont"
+        android:textFontWeight="500"
         android:textColor="@color/text_primary"
-        android:textSize="15sp" />
+        android:textSize="13sp" />
 </LinearLayout>

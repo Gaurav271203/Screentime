@@ -30,6 +30,10 @@ class NotifDb private constructor(ctx: Context) :
         writableDatabase.insert("n", null, cv)
     }
 
+    fun clearAll() {
+        writableDatabase.delete("n", null, null)
+    }
+
     fun prune(olderThan: Long) {
         writableDatabase.delete("n", "ts < ?", arrayOf(olderThan.toString()))
     }

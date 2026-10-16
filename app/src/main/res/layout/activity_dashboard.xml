@@ -31,17 +31,18 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textColor="@color/text_secondary"
-                android:textSize="19sp" />
+                android:textSize="16sp" />
 
             <TextView
                 android:id="@+id/tvCategories"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/appfont"
+        android:textFontWeight="500"
                 android:padding="6dp"
                 android:text="Categories"
                 android:textColor="@color/link"
-                android:textSize="19sp" />
+                android:textSize="16sp" />
         </LinearLayout>
 
         <LinearLayout

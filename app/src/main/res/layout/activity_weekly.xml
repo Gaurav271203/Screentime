@@ -31,7 +31,7 @@
                 android:layout_weight="1"
                 android:paddingStart="12dp"
                 android:textColor="@color/text_secondary"
-                android:textSize="18sp" />
+                android:textSize="15sp" />
 
             <ImageButton
                 android:id="@+id/btnPrevWeek"
@@ -66,10 +66,11 @@
                 android:id="@+id/tvAvg"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-light"
+                android:fontFamily="@font/appfont"
+        android:textFontWeight="300"
                 android:paddingStart="4dp"
                 android:textColor="@color/text_primary"
-                android:textSize="38sp" />
+                android:textSize="33sp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -77,7 +78,7 @@
                 android:paddingStart="4dp"
                 android:text="Daily average screen time"
                 android:textColor="@color/text_secondary"
-                android:textSize="18sp" />
+                android:textSize="15sp" />
 
             <com.example.screentime.UsageBarChart
                 android:id="@+id/chart"
@@ -101,15 +102,16 @@
                     android:layout_weight="1"
                     android:text="Goal achieved"
                     android:textColor="@color/text_secondary"
-                    android:textSize="18sp" />
+                    android:textSize="15sp" />
 
                 <TextView
                     android:id="@+id/tvGoalDays"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/appfont"
+        android:textFontWeight="500"
                     android:textColor="@color/text_primary"
-                    android:textSize="18sp" />
+                    android:textSize="15sp" />
             </LinearLayout>
         </LinearLayout>
 
@@ -142,16 +144,17 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="@color/text_primary"
-                        android:textSize="20sp" />
+                        android:textSize="17sp" />
 
                     <TextView
                         android:id="@+id/tvCatTotal"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:fontFamily="sans-serif-light"
+                        android:fontFamily="@font/appfont"
+        android:textFontWeight="300"
                         android:textColor="@color/text_primary"
-                        android:textSize="38sp" />
+                        android:textSize="33sp" />
                 </LinearLayout>
 
                 <ImageView
@@ -167,7 +170,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:textColor="@color/text_secondary"
-                android:textSize="17sp" />
+                android:textSize="15sp" />
 
             <LinearLayout
                 android:id="@+id/catApps"
@@ -196,7 +199,7 @@
                 android:layout_height="wrap_content"
                 android:text="Peak usage times"
                 android:textColor="@color/text_primary"
-                android:textSize="20sp" />
+                android:textSize="17sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -209,9 +212,10 @@
                     android:id="@+id/tvPeakBig"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-light"
+                    android:fontFamily="@font/appfont"
+        android:textFontWeight="300"
                     android:textColor="@color/text_primary"
-                    android:textSize="38sp" />
+                    android:textSize="33sp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -225,15 +229,16 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="@color/text_secondary"
-                        android:textSize="17sp" />
+                        android:textSize="15sp" />
 
                     <TextView
                         android:id="@+id/tvPeakCat"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/appfont"
+        android:textFontWeight="500"
                         android:textColor="@color/text_primary"
-                        android:textSize="19sp" />
+                        android:textSize="16sp" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -252,7 +257,7 @@
                     android:gravity="center_vertical"
                     android:text="0~15"
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -263,7 +268,7 @@
                     android:gravity="center_vertical"
                     android:text="15~30"
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -274,7 +279,7 @@
                     android:gravity="center_vertical"
                     android:text="30~45"
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -285,7 +290,7 @@
                     android:gravity="center_vertical"
                     android:text="45~60"
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <com.example.screentime.HeatmapView
@@ -335,7 +340,7 @@
                 android:layout_height="wrap_content"
                 android:text="Most used apps"
                 android:textColor="@color/text_primary"
-                android:textSize="20sp" />
+                android:textSize="17sp" />
 
             <LinearLayout
                 android:id="@+id/mostIcons"
