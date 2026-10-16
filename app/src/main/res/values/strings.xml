@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Screen Time</string>
+    <string name="title">Screen time</string>
+    <string name="screen_time">Screen time</string>
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="previous_day">Previous day</string>
+    <string name="next_day">Next day</string>
+    <string name="unlocks">Unlocks</string>
+    <string name="apps_used">Apps used</string>
+    <string name="last_7_days">Last 7 days</string>
+    <string name="most_used">Most used</string>
+    <string name="no_usage">No usage recorded for this day.</string>
+    <string name="permission_title">Allow usage access</string>
+    <string name="permission_body">To show how much time you spend on your phone, this app needs usage access. Open the settings, select Screen Time, and turn on \"Permit usage access\".</string>
+    <string name="grant_access">Open settings</string>
+    <string name="refresh">Refresh</string>
+    <string name="widget_description">Today\'s screen time and your most used apps</string>
+</resources>

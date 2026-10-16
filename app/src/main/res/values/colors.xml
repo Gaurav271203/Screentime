@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="white">#FFFFFFFF</color>
+    <color name="bg">#FF000000</color>
+    <color name="card">#FF1C1C1E</color>
+    <color name="dialog">#FF2C2C2E</color>
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#FF9B9B9F</color>
+    <color name="track">#FF3A3A3C</color>
+    <color name="grid">#FF3A3A3C</color>
+    <color name="pill">#FF48484B</color>
+    <color name="green">#FF2EC27E</color>
+    <color name="red">#FFDB4A3F</color>
+    <color name="link">#FF5B8DEF</color>
+    <color name="bar_blue">#FF2F95F0</color>
+    <color name="accent">#FF3A78F2</color>
+    <color name="c1">#FF1FCFB5</color>
+    <color name="c2">#FF3A78F2</color>
+    <color name="c3">#FF6C4FD8</color>
+    <color name="c4">#FFB9BFDA</color>
+    <color name="heat_row">#FF2B2B2D</color>
+    <color name="heat_empty">#FF343436</color>
+    <color name="heat1">#FF66789C</color>
+    <color name="heat2">#FF4A7BC8</color>
+    <color name="heat3">#FF2A6FDC</color>
+    <color name="heat4">#FF0A63E6</color>
+</resources>
