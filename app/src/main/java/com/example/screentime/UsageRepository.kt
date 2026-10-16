@@ -230,6 +230,7 @@ object UsageRepository {
 
     /** Wipes everything saved on this phone (history + notification log). Goal is kept. */
     fun clearSaved(ctx: Context) {
+        Prefs.setResetAt(ctx, System.currentTimeMillis())
         ctx.getSharedPreferences("hist", Context.MODE_PRIVATE).edit().clear()
             .putInt("v", HIST_VERSION).apply()
         try {
@@ -276,7 +277,7 @@ object UsageRepository {
         val qFrom = firstMissing ?: return data
         if (qFrom.isAfter(today)) return data
 
-        val start = qFrom.atStartOfDay(z).toInstant().toEpochMilli()
+        val start = maxOf(qFrom.atStartOfDay(z).toInstant().toEpochMilli(), Prefs.resetAt(ctx))
         val end = minOf(to.plusDays(1).atStartOfDay(z).toInstant().toEpochMilli(), System.currentTimeMillis())
         if (end <= start) return data
 
@@ -374,6 +375,13 @@ object Prefs {
         val e = sp(ctx).edit()
         if (sp(ctx).getInt("goal", -1) <= 0) e.putLong("goalSince", LocalDate.now().toEpochDay())
         e.putInt("goal", minutes).apply()
+    }
+
+    /** Usage before this moment is ignored (set by "Clear saved data"). 0 = no reset. */
+    fun resetAt(ctx: Context): Long = sp(ctx).getLong("resetAt", 0L)
+
+    fun setResetAt(ctx: Context, ms: Long) {
+        sp(ctx).edit().putLong("resetAt", ms).apply()
     }
 
     fun blockEnabled(ctx: Context): Boolean = sp(ctx).getBoolean("block", false)

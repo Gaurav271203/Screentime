@@ -93,8 +93,9 @@ class HomeActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle("Clear saved data?")
             .setMessage(
-                "This deletes the usage history and notification counts stored by this app. " +
-                    "Today's usage is then recalculated from Android's own records. Your goal and settings are kept."
+                "This resets everything to zero and starts counting again from now. " +
+                    "Earlier usage and notification counts are removed from this app " +
+                    "(Android's own records are not touched). Your goal and settings are kept."
             )
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Clear") { _, _ ->
@@ -104,7 +105,7 @@ class HomeActivity : Activity() {
                     ScreenTimeWidget.updateAll(ctx)
                     true
                 }, {
-                    Toast.makeText(this, "Saved data cleared", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Cleared. Counting from now.", Toast.LENGTH_SHORT).show()
                     refresh()
                 })
             }
