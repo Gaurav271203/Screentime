@@ -224,15 +224,7 @@ class ScreenTimeWidget : AppWidgetProvider() {
             val day = UsageRepository.loadDay(ctx, LocalDate.now())
             val colors = intArrayOf(TEAL, BLUE, PURPLE)
             val timers = Prefs.timers(ctx)
-            val byUse = day.apps
-            val used = byUse.associateBy { it.pkg }
-            // apps with a timer come first (closest to limit first), then the biggest other apps
-            val timed = timers.entries.sortedByDescending {
-                (used[it.key]?.millis ?: 0L).toDouble() / (it.value * 60_000.0)
-            }.take(3).map { e ->
-                used[e.key] ?: AppUsage(e.key, Apps.get(ctx, e.key).label, null, 0L)
-            }
-            val top = (timed + byUse.filter { it.pkg !in timers }).take(3)
+            val top = day.apps.take(3)
             val segs = ArrayList<Pair<Float, Int>>()
             top.forEachIndexed { i, a -> segs.add(a.millis.toFloat() to colors[i]) }
             val others = day.totalMillis - top.sumOf { it.millis }
