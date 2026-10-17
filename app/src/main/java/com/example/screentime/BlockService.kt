@@ -34,7 +34,8 @@ object BlockHelper {
 
     fun sync(ctx: Context) {
         val c = ctx.applicationContext
-        val want = Prefs.blockEnabled(c) && Prefs.goalMinutes(c) > 0 && Settings.canDrawOverlays(c)
+        val want = ((Prefs.blockEnabled(c) && Prefs.goalMinutes(c) > 0) || Prefs.timers(c).isNotEmpty()) &&
+            Settings.canDrawOverlays(c)
         try {
             if (want) {
                 c.startForegroundService(Intent(c, BlockService::class.java))
@@ -42,6 +43,15 @@ object BlockHelper {
                 c.stopService(Intent(c, BlockService::class.java))
             }
         } catch (_: Exception) {
+        }
+    }
+
+    fun ensureOverlay(a: android.app.Activity) {
+        if (!Settings.canDrawOverlays(a)) {
+            android.widget.Toast.makeText(
+                a, "Allow \"Display over other apps\" so limits can be enforced", android.widget.Toast.LENGTH_LONG
+            ).show()
+            a.startActivity(overlaySettingsIntent(a))
         }
     }
 
@@ -86,6 +96,10 @@ class BlockService : Service() {
 
     @Volatile
     private var totalMs = 0L
+    @Volatile
+    private var appMs: Map<String, Long> = emptyMap()
+    @Volatile
+    private var loadedAt = 0L
     private var lastTotalAt = 0L
     private var loading = false
 
@@ -96,23 +110,47 @@ class BlockService : Service() {
 
     private var wm: WindowManager? = null
     private var overlay: View? = null
-    private var overlayPkg: String? = null
+    private var overlayKey: String? = null
 
     private val tick = object : Runnable {
         override fun run() {
-            val goal = Prefs.goalMinutes(this@BlockService)
-            if (!Prefs.blockEnabled(this@BlockService) || goal <= 0 ||
-                !Settings.canDrawOverlays(this@BlockService)
-            ) {
+            val ctx = this@BlockService
+            val goal = Prefs.goalMinutes(ctx)
+            val goalOn = Prefs.blockEnabled(ctx) && goal > 0
+            val timers = Prefs.timers(ctx)
+            if ((!goalOn && timers.isEmpty()) || !Settings.canDrawOverlays(ctx)) {
                 hideOverlay()
                 stopSelf()
                 return
             }
-            refreshTotal()
+            refreshTotal(if (timers.isEmpty()) 20_000L else 8_000L)
             updateForeground()
-            val over = totalMs >= goal * 60_000L
             val pkg = fg
-            if (over && pkg != null && pkg !in allowedSet()) showOverlay(goal) else hideOverlay()
+            val now = System.currentTimeMillis()
+            val safe = pkg == null || pkg in Apps.excluded(ctx) || pkg == packageName
+            var key: String? = null
+            var title = ""
+            var sub = ""
+            if (!safe && pkg != null) {
+                val lim = timers[pkg]
+                if (lim != null) {
+                    val used = (appMs[pkg] ?: 0L) + (if (loadedAt > 0) now - loadedAt else 0L)
+                    if (used >= lim * 60_000L) {
+                        val name = Apps.get(ctx, pkg).label
+                        key = pkg
+                        title = "Time's up for $name"
+                        sub = "Your timer for $name was " + Fmt.spaced(lim * 60_000L) +
+                            ".\nIt is paused until tomorrow."
+                    }
+                }
+                if (key == null && goalOn && totalMs >= goal * 60_000L && pkg !in allowedSet()) {
+                    key = "goal"
+                    title = "Daily limit reached"
+                    sub = "You've used " + Fmt.spaced(totalMs) + " today.\nYour goal was " +
+                        Fmt.spaced(goal * 60_000L) + ". Apps are paused until tomorrow."
+                }
+            }
+            if (key != null) showOverlay(key, title, sub) else hideOverlay()
             handler.postDelayed(this, 700)
         }
     }
@@ -127,8 +165,8 @@ class BlockService : Service() {
         )
         val n = Notification.Builder(this, "block")
             .setSmallIcon(R.drawable.ic_bars)
-            .setContentTitle("Daily limit blocking is on")
-            .setContentText("Apps are blocked once today's screen time goal is reached")
+            .setContentTitle("Daily limits are active")
+            .setContentText("Apps are paused when their timer or your daily goal is reached")
             .setContentIntent(open)
             .setOngoing(true)
             .build()
@@ -160,15 +198,18 @@ class BlockService : Service() {
         return allowed
     }
 
-    private fun refreshTotal() {
+    private fun refreshTotal(interval: Long) {
         val now = System.currentTimeMillis()
-        if (loading || now - lastTotalAt < 20_000L) return
+        if (loading || now - lastTotalAt < interval) return
         loading = true
         lastTotalAt = now
         worker.execute {
             try {
                 val t = LocalDate.now()
-                totalMs = UsageRepository.load(applicationContext, t, t).totalOnDay(t)
+                val u = UsageRepository.load(applicationContext, t, t)
+                totalMs = u.totalOnDay(t)
+                appMs = u.appsOnDay(t)
+                loadedAt = System.currentTimeMillis()
             } catch (_: Exception) {
             } finally {
                 loading = false
@@ -197,9 +238,11 @@ class BlockService : Service() {
         }
     }
 
-    private fun showOverlay(goalMin: Int) {
-        if (overlay != null) return
-        val view = buildOverlay(goalMin)
+    private fun showOverlay(key: String, title: String, sub: String) {
+        if (overlay != null && overlayKey == key) return
+        hideOverlay()
+        val view = buildOverlay(title, sub)
+        overlayKey = key
         val lp = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -224,9 +267,10 @@ class BlockService : Service() {
         } catch (_: Exception) {
         }
         overlay = null
+        overlayKey = null
     }
 
-    private fun buildOverlay(goalMin: Int): View {
+    private fun buildOverlay(titleText: String, subText: String): View {
         val d = resources.displayMetrics.density
         fun dp(v: Float) = (v * d).toInt()
 
@@ -237,15 +281,14 @@ class BlockService : Service() {
         root.setPadding(dp(32f), dp(32f), dp(32f), dp(32f))
 
         val title = TextView(this)
-        title.text = "Daily limit reached"
+        title.text = titleText
         title.setTextColor(Color.WHITE)
         title.textSize = 26f
         title.typeface = Fonts.light(this)
         title.gravity = Gravity.CENTER
 
         val sub = TextView(this)
-        sub.text = "You've used " + Fmt.spaced(totalMs) + " today.\nYour goal was " +
-            Fmt.spaced(goalMin * 60_000L) + ". Apps are paused until tomorrow."
+        sub.text = subText
         sub.setTextColor(Color.parseColor("#B0B0B5"))
         sub.textSize = 15f
         sub.typeface = Fonts.regular(this)

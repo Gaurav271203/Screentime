@@ -15,6 +15,7 @@
         android:paddingBottom="12dp">
 
         <TextView
+            android:id="@+id/dlgTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/appfont"
@@ -64,6 +65,7 @@
                 android:text="Delete" />
 
             <View
+                android:id="@+id/sep1"
                 android:layout_width="1dp"
                 android:layout_height="22dp"
                 android:layout_gravity="center_vertical"
@@ -75,6 +77,7 @@
                 android:text="Cancel" />
 
             <View
+                android:id="@+id/sep2"
                 android:layout_width="1dp"
                 android:layout_height="22dp"
                 android:layout_gravity="center_vertical"

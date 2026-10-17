@@ -5,7 +5,9 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.view.LayoutInflater
 import android.view.View
+import android.widget.ImageView
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.PopupMenu
@@ -61,7 +63,8 @@ class HomeActivity : Activity() {
             pm.menu.add(0, 2, 1, "Screen time goal")
             pm.menu.add(0, 3, 2, "Block apps at limit")
             pm.menu.add(0, 4, 3, "Notification access")
-            pm.menu.add(0, 5, 4, "Clear saved data")
+            pm.menu.add(0, 6, 4, "App timers")
+            pm.menu.add(0, 5, 5, "Clear saved data")
             pm.setOnMenuItemClickListener {
                 when (it.itemId) {
                     1 -> startActivity(Intent(this, WeeklyActivity::class.java))
@@ -69,6 +72,7 @@ class HomeActivity : Activity() {
                     3 -> startActivity(Intent(this, BlockActivity::class.java))
                     4 -> startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                     5 -> confirmClear()
+                    6 -> startActivity(Intent(this, TimersActivity::class.java))
                 }
                 true
             }
@@ -82,6 +86,9 @@ class HomeActivity : Activity() {
         }
         findViewById<View>(R.id.cardBlock).setOnClickListener {
             startActivity(Intent(this, BlockActivity::class.java))
+        }
+        findViewById<View>(R.id.cardTimers).setOnClickListener {
+            startActivity(Intent(this, TimersActivity::class.java))
         }
         findViewById<View>(R.id.btnClear).setOnClickListener { confirmClear() }
         findViewById<View>(R.id.cardGoal).setOnClickListener {
@@ -138,6 +145,28 @@ class HomeActivity : Activity() {
         }, { bind(it) })
     }
 
+    private fun bindTimers(d: HomeData) {
+        val list = findViewById<LinearLayout>(R.id.timersList)
+        val hint = findViewById<TextView>(R.id.tvTimersHint)
+        list.removeAllViews()
+        val timers = Prefs.timers(this)
+        hint.visibility = if (timers.isEmpty()) View.VISIBLE else View.GONE
+        val used = d.apps.toMap()
+        val inf = LayoutInflater.from(this)
+        val sec = getColor(R.color.text_secondary)
+        val rows = timers.entries.sortedByDescending {
+            (used[it.key] ?: 0L).toDouble() / (it.value * 60_000.0)
+        }
+        for ((pkg, min) in rows) {
+            val meta = Apps.get(this, pkg)
+            val v = inf.inflate(R.layout.item_app_row, list, false)
+            v.findViewById<ImageView>(R.id.icon).setImageDrawable(meta.icon(this))
+            v.findViewById<TextView>(R.id.name).text = meta.label
+            v.findViewById<TextView>(R.id.time).text = Fmt.withLimit(used[pkg] ?: 0L, min * 60_000L, sec)
+            list.addView(v)
+        }
+    }
+
     private fun bindBlockState() {
         val g = Prefs.goalMinutes(this)
         tvBlockState.text = when {
@@ -149,7 +178,11 @@ class HomeActivity : Activity() {
 
     private fun bind(d: HomeData) {
         bindBlockState()
-        tvTotal.text = Fmt.big(d.total)
+        val goalMin = Prefs.goalMinutes(this)
+        tvTotal.text = if (goalMin > 0)
+            Fmt.bigWithGoal(d.total, goalMin * 60_000L, getColor(R.color.text_secondary))
+        else Fmt.big(d.total)
+        bindTimers(d)
 
         val colors = Palette.series(this)
         val top = d.cats.take(3)
@@ -162,7 +195,7 @@ class HomeActivity : Activity() {
         legend.removeAllViews()
         top.forEachIndexed { i, c -> Ui.legendRow(this, legend, colors[i], c.first, Fmt.spaced(c.second)) }
 
-        Ui.appIcons(this, iconsRow, d.apps.take(3).map { Apps.get(this, it.first) to it.second })
+        Ui.appIcons(this, iconsRow, d.apps.take(3).map { Apps.get(this, it.first) to it.second }, true)
 
         val g = Prefs.goalMinutes(this)
         if (g > 0) {

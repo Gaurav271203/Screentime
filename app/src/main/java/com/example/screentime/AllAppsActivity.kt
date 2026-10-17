@@ -49,7 +49,7 @@ class AllAppsActivity : Activity() {
                 val row = inf.inflate(R.layout.item_app_row, list, false)
                 row.findViewById<ImageView>(R.id.icon).setImageDrawable(meta.icon(this))
                 row.findViewById<TextView>(R.id.name).text = meta.label
-                row.findViewById<TextView>(R.id.time).text = if (mode == 0) Fmt.spaced(v) else v.toString()
+                row.findViewById<TextView>(R.id.time).text = if (mode == 0) Ui.timeText(this, meta.pkg, v, true) else v.toString()
                 list.addView(row)
             }
         })

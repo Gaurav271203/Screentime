@@ -44,6 +44,8 @@
         <activity android:name=".GoalActivity" android:exported="false" />
         <activity android:name=".AllAppsActivity" android:exported="false" />
         <activity android:name=".BlockActivity" android:exported="false" />
+        <activity android:name=".TimersActivity" android:exported="false" />
+        <activity android:name=".PickAppActivity" android:exported="false" />
         <activity android:name=".AllowedAppsActivity" android:exported="false" />
 
         <service

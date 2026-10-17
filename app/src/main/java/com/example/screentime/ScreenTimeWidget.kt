@@ -150,6 +150,26 @@ class ScreenTimeWidget : AppWidgetProvider() {
             return sb
         }
 
+        private fun withGoal(ms: Long, goalMs: Long): CharSequence {
+            val sb = SpannableStringBuilder(totalText(ms))
+            if (goalMs > 0) {
+                val st = sb.length
+                sb.append("/").append(spaced(goalMs))
+                sb.setSpan(ForegroundColorSpan(LEGEND_GRAY), st, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                sb.setSpan(RelativeSizeSpan(0.5f), st, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            return sb
+        }
+
+        private fun limitText(ms: Long, limitMs: Long): CharSequence {
+            val sb = SpannableStringBuilder(spaced(ms))
+            val st = sb.length
+            sb.append("/").append(spaced(limitMs))
+            sb.setSpan(ForegroundColorSpan(0xFFA0A0A6.toInt()), st, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            sb.setSpan(RelativeSizeSpan(0.8f), st, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            return sb
+        }
+
         private fun legend(label: String, color: Int): CharSequence {
             val sb = SpannableStringBuilder("● $label")
             sb.setSpan(ForegroundColorSpan(color), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -194,19 +214,31 @@ class ScreenTimeWidget : AppWidgetProvider() {
             val access: Boolean,
             val total: Long,
             val top: List<AppUsage>,
-            val segs: List<Pair<Float, Int>>
+            val segs: List<Pair<Float, Int>>,
+            val goalMs: Long,
+            val timers: Map<String, Int>
         )
 
         private fun loadData(ctx: Context): WData {
-            if (!hasAccess(ctx)) return WData(false, 0L, emptyList(), emptyList())
+            if (!hasAccess(ctx)) return WData(false, 0L, emptyList(), emptyList(), 0L, emptyMap())
             val day = UsageRepository.loadDay(ctx, LocalDate.now())
             val colors = intArrayOf(TEAL, BLUE, PURPLE)
-            val top = day.apps.take(3)
+            val timers = Prefs.timers(ctx)
+            val byUse = day.apps
+            val used = byUse.associateBy { it.pkg }
+            // apps with a timer come first (closest to limit first), then the biggest other apps
+            val timed = timers.entries.sortedByDescending {
+                (used[it.key]?.millis ?: 0L).toDouble() / (it.value * 60_000.0)
+            }.take(3).map { e ->
+                used[e.key] ?: AppUsage(e.key, Apps.get(ctx, e.key).label, null, 0L)
+            }
+            val top = (timed + byUse.filter { it.pkg !in timers }).take(3)
             val segs = ArrayList<Pair<Float, Int>>()
             top.forEachIndexed { i, a -> segs.add(a.millis.toFloat() to colors[i]) }
             val others = day.totalMillis - top.sumOf { it.millis }
             if (others > 0) segs.add(others.toFloat() to OTHERS)
-            return WData(true, day.totalMillis, top, segs)
+            val g = Prefs.goalMinutes(ctx)
+            return WData(true, day.totalMillis, top, segs, if (g > 0) g * 60_000L else 0L, timers)
         }
 
         private fun buildViews(ctx: Context): RemoteViews {
@@ -241,8 +273,8 @@ class ScreenTimeWidget : AppWidgetProvider() {
                 small.setTextViewText(R.id.tvTotal, "Allow")
                 for (r in intArrayOf(R.id.row1, R.id.row2, R.id.row3)) wide.setViewVisibility(r, View.GONE)
             } else {
-                wide.setTextViewText(R.id.tvTotal, totalText(d.total))
-                compact.setTextViewText(R.id.tvTotal, totalText(d.total))
+                wide.setTextViewText(R.id.tvTotal, withGoal(d.total, d.goalMs))
+                compact.setTextViewText(R.id.tvTotal, withGoal(d.total, d.goalMs))
                 small.setTextViewText(R.id.tvTotal, tiny(d.total))
 
                 val rows = intArrayOf(R.id.row1, R.id.row2, R.id.row3)
@@ -253,7 +285,11 @@ class ScreenTimeWidget : AppWidgetProvider() {
                     if (i < d.top.size) {
                         wide.setViewVisibility(rows[i], View.VISIBLE)
                         wide.setTextViewText(names[i], legend(d.top[i].label, colors[i]))
-                        wide.setTextViewText(times[i], spaced(d.top[i].millis))
+                        val lim = d.timers[d.top[i].pkg]
+                        wide.setTextViewText(
+                            times[i],
+                            if (lim != null) limitText(d.top[i].millis, lim * 60_000L) else spaced(d.top[i].millis)
+                        )
                     } else {
                         wide.setViewVisibility(rows[i], View.GONE)
                     }

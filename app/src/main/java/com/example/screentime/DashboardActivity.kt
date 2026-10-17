@@ -141,6 +141,11 @@ class DashboardActivity : Activity() {
         unlockCard.findViewById<TextView>(R.id.cs_big).text = Fmt.bigCount(counts[idx], "unlocks")
     }
 
+    private fun goalBig(ms: Long): CharSequence {
+        val g = Prefs.goalMinutes(this)
+        return if (g > 0) Fmt.bigWithGoal(ms, g * 60_000L, getColor(R.color.text_secondary)) else Fmt.big(ms)
+    }
+
     private fun nameOf(key: String): String = if (byCategory) key else Apps.get(this, key).label
 
     private fun bindSeries(card: View, maps: List<Map<String, Long>>, idx: Int, time: Boolean) {
@@ -182,13 +187,16 @@ class DashboardActivity : Activity() {
 
         val total = sel.values.sum()
         card.findViewById<TextView>(R.id.cs_big).text =
-            if (time) Fmt.big(total) else Fmt.bigCount(total.toInt(), "notifications")
+            if (time) goalBig(total) else Fmt.bigCount(total.toInt(), "notifications")
 
         val legend = card.findViewById<LinearLayout>(R.id.cs_legend)
         legend.removeAllViews()
         top.forEachIndexed { i, k ->
             val v = sel[k] ?: 0L
-            Ui.legendRow(this, legend, colors[i], nameOf(k), if (time) Fmt.spaced(v) else v.toString())
+            Ui.legendRow(
+                this, legend, colors[i], nameOf(k),
+                if (time) (if (!byCategory) Ui.timeText(this, k, v, true) else Fmt.spaced(v)) else v.toString()
+            )
         }
     }
 }

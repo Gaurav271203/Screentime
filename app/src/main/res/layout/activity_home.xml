@@ -152,6 +152,44 @@
                     android:orientation="horizontal" />
             </LinearLayout>
 
+            <!-- App timers -->
+            <LinearLayout
+                android:id="@+id/cardTimers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingTop="20dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="App timers"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp" />
+
+                <LinearLayout
+                    android:id="@+id/timersList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/tvTimersHint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:text="No timers yet. Tap to add one."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
             <!-- Screen time goal -->
             <LinearLayout
                 android:id="@+id/cardGoal"

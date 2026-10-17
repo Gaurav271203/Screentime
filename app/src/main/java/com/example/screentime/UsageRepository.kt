@@ -11,6 +11,7 @@ import android.graphics.drawable.Drawable
 import android.os.Process
 import android.text.SpannableStringBuilder
 import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
 import android.view.LayoutInflater
 import android.view.View
@@ -384,6 +385,25 @@ object Prefs {
         sp(ctx).edit().putLong("resetAt", ms).apply()
     }
 
+    /** Daily per-app timers: package -> minutes. */
+    fun timers(ctx: Context): Map<String, Int> {
+        val out = HashMap<String, Int>()
+        for (e in sp(ctx).getStringSet("timers", emptySet()) ?: emptySet()) {
+            val i = e.lastIndexOf('|')
+            if (i <= 0) continue
+            val m = e.substring(i + 1).toIntOrNull() ?: continue
+            out[e.substring(0, i)] = m
+        }
+        return out
+    }
+
+    /** minutes <= 0 removes the timer. */
+    fun setTimer(ctx: Context, pkg: String, minutes: Int) {
+        val m = timers(ctx).toMutableMap()
+        if (minutes <= 0) m.remove(pkg) else m[pkg] = minutes
+        sp(ctx).edit().putStringSet("timers", m.map { it.key + "|" + it.value }.toHashSet()).apply()
+    }
+
     fun blockEnabled(ctx: Context): Boolean = sp(ctx).getBoolean("block", false)
 
     fun setBlockEnabled(ctx: Context, on: Boolean) {
@@ -448,6 +468,26 @@ object Fmt {
         return sb
     }
 
+    /** "37 m" followed by a smaller, lighter "/40 m". */
+    fun withLimit(ms: Long, limitMs: Long, color: Int): CharSequence {
+        val sb = SpannableStringBuilder(spaced(ms))
+        val st = sb.length
+        sb.append("/").append(spaced(limitMs))
+        sb.setSpan(ForegroundColorSpan(color), st, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sb.setSpan(RelativeSizeSpan(0.8f), st, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        return sb
+    }
+
+    /** Big "1 h 35 m" followed by a smaller, lighter "/2 h". */
+    fun bigWithGoal(ms: Long, goalMs: Long, color: Int): CharSequence {
+        val sb = SpannableStringBuilder(big(ms))
+        val st = sb.length
+        sb.append("/").append(spaced(goalMs))
+        sb.setSpan(ForegroundColorSpan(color), st, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sb.setSpan(RelativeSizeSpan(UNIT), st, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        return sb
+    }
+
     private fun small(sb: SpannableStringBuilder, s: String) {
         val st = sb.length
         sb.append(s)
@@ -479,10 +519,17 @@ object Palette {
 }
 
 object Ui {
+    /** "37 m", or "37 m/40 m" (limit smaller + lighter) when this app has a timer. */
+    fun timeText(ctx: Context, pkg: String, ms: Long, limits: Boolean): CharSequence {
+        if (!limits) return Fmt.spaced(ms)
+        val lim = Prefs.timers(ctx)[pkg] ?: return Fmt.spaced(ms)
+        return Fmt.withLimit(ms, lim * 60_000L, ctx.getColor(R.color.text_secondary))
+    }
+
     fun dp(ctx: Context, v: Float): Float = v * ctx.resources.displayMetrics.density
     fun dpi(ctx: Context, v: Float): Int = (dp(ctx, v) + 0.5f).toInt()
 
-    fun legendRow(ctx: Context, parent: LinearLayout, color: Int, name: String, value: String) {
+    fun legendRow(ctx: Context, parent: LinearLayout, color: Int, name: String, value: CharSequence) {
         val row = LayoutInflater.from(ctx).inflate(R.layout.item_legend, parent, false)
         row.findViewById<View>(R.id.dot).backgroundTintList = ColorStateList.valueOf(color)
         row.findViewById<TextView>(R.id.legName).text = name
@@ -491,27 +538,27 @@ object Ui {
     }
 
     /** Horizontal row of app icons with name and time underneath. */
-    fun appIcons(ctx: Context, parent: LinearLayout, items: List<Pair<AppMeta, Long>>) {
+    fun appIcons(ctx: Context, parent: LinearLayout, items: List<Pair<AppMeta, Long>>, limits: Boolean = false) {
         parent.removeAllViews()
         val inf = LayoutInflater.from(ctx)
         for ((meta, ms) in items) {
             val v = inf.inflate(R.layout.item_app_icon, parent, false)
             v.findViewById<ImageView>(R.id.icon).setImageDrawable(meta.icon(ctx))
             v.findViewById<TextView>(R.id.name).text = meta.label
-            v.findViewById<TextView>(R.id.time).text = Fmt.spaced(ms)
+            v.findViewById<TextView>(R.id.time).text = timeText(ctx, meta.pkg, ms, limits)
             parent.addView(v)
         }
     }
 
     /** Vertical list rows: icon, name, time. */
-    fun appRows(ctx: Context, parent: LinearLayout, items: List<Pair<AppMeta, Long>>) {
+    fun appRows(ctx: Context, parent: LinearLayout, items: List<Pair<AppMeta, Long>>, limits: Boolean = false) {
         parent.removeAllViews()
         val inf = LayoutInflater.from(ctx)
         for ((meta, ms) in items) {
             val v = inf.inflate(R.layout.item_app_row, parent, false)
             v.findViewById<ImageView>(R.id.icon).setImageDrawable(meta.icon(ctx))
             v.findViewById<TextView>(R.id.name).text = meta.label
-            v.findViewById<TextView>(R.id.time).text = Fmt.spaced(ms)
+            v.findViewById<TextView>(R.id.time).text = timeText(ctx, meta.pkg, ms, limits)
             parent.addView(v)
         }
     }
