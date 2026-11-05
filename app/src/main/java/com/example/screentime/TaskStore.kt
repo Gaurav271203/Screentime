@@ -1,4 +1,4 @@
-package com.example.lockdo
+package com.example.screentime
 
 import android.content.Context
 import org.json.JSONArray
@@ -10,7 +10,7 @@ data class Task(val id: Long, val title: String, val minute: Int, val doneDay: L
     val doneToday: Boolean get() = doneDay == LocalDate.now().toEpochDay()
 }
 
-object Store {
+object TaskStore {
     private fun sp(c: Context) = c.applicationContext.getSharedPreferences("tasks", Context.MODE_PRIVATE)
 
     fun all(c: Context): List<Task> {

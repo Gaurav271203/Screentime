@@ -57,6 +57,9 @@
                 android:value="Blocks apps after the user's own daily screen time limit is reached" />
         </service>
 
+        <activity android:name=".TasksActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <receiver android:name=".TaskReceiver" android:exported="false" />
+
         <receiver
             android:name=".BootReceiver"
             android:exported="true">

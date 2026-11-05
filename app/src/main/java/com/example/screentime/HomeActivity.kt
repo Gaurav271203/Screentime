@@ -38,6 +38,7 @@ class HomeActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+        TabBar.attach(this, false)
 
         cardPermission = findViewById(R.id.cardPermission)
         cards = findViewById(R.id.cards)

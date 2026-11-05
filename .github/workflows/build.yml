@@ -32,15 +32,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ScreenTime-apk
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            todo/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk
 
       - name: Publish APK to Releases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk ScreenTime.apk
-          cp todo/build/outputs/apk/debug/todo-debug.apk LockDo.apk
           gh release delete latest --cleanup-tag --yes || true
-          gh release create latest ScreenTime.apk LockDo.apk --title "Latest build" --notes "Built from commit ${{ github.sha }}" --target "${{ github.sha }}"
+          gh release create latest ScreenTime.apk --title "Latest build" --notes "Built from commit ${{ github.sha }}" --target "${{ github.sha }}"

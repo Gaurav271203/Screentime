@@ -1,4 +1,4 @@
-package com.example.lockdo
+package com.example.screentime
 
 import android.Manifest
 import android.app.Activity
@@ -47,7 +47,7 @@ class MainActivity : Activity() {
 
         list = LinearLayout(this)
         list.orientation = LinearLayout.VERTICAL
-        list.setPadding(0, 0, 0, dp(110f))
+        list.setPadding(0, 0, 0, dp(190f))
         val scroll = ScrollView(this)
         scroll.isVerticalScrollBarEnabled = false
         scroll.addView(list)
@@ -62,13 +62,14 @@ class MainActivity : Activity() {
         fab.setTextColor(Color.WHITE)
         fab.textSize = 30f
         fab.gravity = Gravity.CENTER
-        fab.setBackgroundResource(R.drawable.bg_fab)
+        fab.setBackgroundResource(R.drawable.task_bg_fab)
         fab.setOnClickListener { edit(null) }
         val lp = FrameLayout.LayoutParams(dp(60f), dp(60f), Gravity.BOTTOM or Gravity.END)
-        lp.setMargins(0, 0, dp(24f), dp(36f))
+        lp.setMargins(0, 0, dp(24f), dp(100f))
         root.addView(fab, lp)
 
         setContentView(root)
+        TabBar.attach(this, true)
 
         if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
@@ -76,17 +77,17 @@ class MainActivity : Activity() {
     }
 
     override fun onRequestPermissionsResult(code: Int, p: Array<out String>, r: IntArray) {
-        Notifier.refresh(this)
+        TaskNotifier.refresh(this)
     }
 
     override fun onResume() {
         super.onResume()
         bind()
-        Notifier.refresh(this)
+        TaskNotifier.refresh(this)
     }
 
     private fun bind() {
-        val all = Store.all(this)
+        val all = TaskStore.all(this)
         val pending = all.filter { !it.doneToday }
         val done = all.filter { it.doneToday }
         sub.text = if (all.isEmpty()) "Tap + to add your first task"
@@ -106,12 +107,12 @@ class MainActivity : Activity() {
         r.layoutParams = lp
 
         val box = ImageView(this)
-        box.setImageResource(if (t.doneToday) R.drawable.ic_circle_done else R.drawable.ic_circle)
+        box.setImageResource(if (t.doneToday) R.drawable.task_ic_circle_done else R.drawable.task_ic_circle)
         box.setPadding(dp(4f), dp(4f), dp(4f), dp(4f))
         box.setOnClickListener {
-            Store.setDone(this, t.id, !t.doneToday)
+            TaskStore.setDone(this, t.id, !t.doneToday)
             bind()
-            Notifier.refresh(this)
+            TaskNotifier.refresh(this)
         }
         r.addView(box, LinearLayout.LayoutParams(dp(40f), dp(40f)))
 
@@ -128,7 +129,7 @@ class MainActivity : Activity() {
         r.addView(name, LinearLayout.LayoutParams(0, -2, 1f))
 
         val time = TextView(this)
-        time.text = Store.fmt(t.minute)
+        time.text = TaskStore.fmt(t.minute)
         time.textSize = 14f
         time.setTextColor(0xFF9B9B9F.toInt())
         r.addView(time)
@@ -155,7 +156,7 @@ class MainActivity : Activity() {
         tb.textSize = 17f
         tb.setTextColor(0xFF5B8DEF.toInt())
         tb.setPadding(0, dp(18f), 0, dp(8f))
-        fun showTime() { tb.text = "At  " + Store.fmt(minute) }
+        fun showTime() { tb.text = "At  " + TaskStore.fmt(minute) }
         showTime()
         tb.setOnClickListener {
             TimePickerDialog(this, { _, h, m -> minute = h * 60 + m; showTime() }, minute / 60, minute % 60, false).show()
@@ -169,16 +170,16 @@ class MainActivity : Activity() {
             .setPositiveButton("Save") { _, _ ->
                 val s = et.text.toString().trim()
                 if (s.isNotEmpty()) {
-                    if (t == null) Store.add(this, s, minute) else Store.update(this, t.id, s, minute)
+                    if (t == null) TaskStore.add(this, s, minute) else TaskStore.update(this, t.id, s, minute)
                     bind()
-                    Notifier.refresh(this)
+                    TaskNotifier.refresh(this)
                 }
             }
         if (t != null) {
             b.setNeutralButton("Delete") { _, _ ->
-                Store.delete(this, t.id)
+                TaskStore.delete(this, t.id)
                 bind()
-                Notifier.refresh(this)
+                TaskNotifier.refresh(this)
             }
         }
         b.show()

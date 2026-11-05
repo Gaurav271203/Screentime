@@ -328,6 +328,9 @@ class BlockService : Service() {
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) BlockHelper.sync(context)
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+            BlockHelper.sync(context)
+            TaskNotifier.refresh(context)
+        }
     }
 }
