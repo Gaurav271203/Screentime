@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "ScreenTime"
-include(":app")
+include(":app", ":todo")
